@@ -109,6 +109,13 @@ class EnrolledPage extends StatelessWidget {
                         separatorBuilder: (_, __) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
                           final c = courses[index];
+                          final enrolledDoc = enrolledDocs[index];
+                          final enrolledData =
+                              enrolledDoc.data() as Map<String, dynamic>?;
+                          final quizScoreRaw = enrolledData?['quizScore'];
+                          final double? quizScore = quizScoreRaw is num
+                              ? quizScoreRaw.toDouble()
+                              : null;
                           return InkWell(
                             borderRadius: BorderRadius.circular(12),
                             onTap: () {
@@ -207,6 +214,16 @@ class EnrolledPage extends StatelessWidget {
                                         .bodySmall
                                         ?.copyWith(color: Colors.white70),
                                   ),
+                                  if (quizScore != null) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Quiz: ${(quizScore * 100).toStringAsFixed(0)}%',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(color: Colors.white70),
+                                    ),
+                                  ],
                                   const SizedBox(height: 8),
                                   Align(
                                     alignment: Alignment.centerRight,

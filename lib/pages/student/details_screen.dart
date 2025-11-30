@@ -3,6 +3,8 @@ import 'package:course_app/constants/icons.dart';
 import 'package:course_app/models/course.dart';
 import 'package:course_app/models/lesson.dart';
 import 'package:course_app/pages/student/enrolled_page.dart';
+import 'package:course_app/pages/student/quiz_page.dart';
+import 'package:course_app/pages/student/pdf_summary_page.dart';
 import 'package:course_app/widgets/custom_video_player.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -34,6 +36,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
 
   Set<int> _completedLessonIndices = {};
   double _progress = 0.0;
+  double? _quizScore; // 0.0 - 1.0
 
   Course? _fullCourse; // cours rechargé depuis la collection principale "courses"
 
@@ -120,11 +123,14 @@ class _DetailsScreenState extends State<DetailsScreen> {
 
     final rawCompleted = (data['completedLessonIndices'] as List?) ?? const [];
     final indices = rawCompleted.whereType<int>().toSet();
+    final quizScoreRaw = data['quizScore'];
+    final double? quizScore = quizScoreRaw is num ? quizScoreRaw.toDouble() : null;
 
     if (!mounted) return;
     setState(() {
       _completedLessonIndices = indices;
       _recomputeProgress();
+      _quizScore = quizScore;
     });
   }
 
@@ -271,6 +277,17 @@ class _DetailsScreenState extends State<DetailsScreen> {
                     color: Colors.white70,
                   ),
                 ),
+                if (_quizScore != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Quiz score: ${(_quizScore! * 100).toStringAsFixed(0)}%',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 13,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 15),
                 CustomTabView(
                   index: _selectedTag,
@@ -363,11 +380,38 @@ class AboutTab extends StatelessWidget {
     final title = course?.name ?? titleFallback;
     return SingleChildScrollView(
       padding: const EdgeInsets.only(top: 20.0),
-      child: Text(
-        '$title is a complete course designed to help you build solid foundations. You will learn key concepts step by step with practical examples so you can apply them in real projects.',
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white70,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$title is a complete course designed to help you build solid foundations. You will learn key concepts step by step with practical examples so you can apply them in real projects.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.white70,
+                ),
+          ),
+          const SizedBox(height: 24),
+          if (course != null)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF4B8B),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CourseQuizPage(course: course!),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Quiz du cours (3-5 QCM)',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
             ),
+        ],
       ),
     );
   }
@@ -445,6 +489,21 @@ class DocumentsTab extends StatelessWidget {
                       type: 'pdf',
                       title: doc['title'] ?? 'Document',
                       url: doc['url'] ?? '',
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.auto_awesome, color: Colors.white),
+                  tooltip: 'Résumé automatique',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PdfSummaryPage(
+                          title: doc['title'] ?? 'Document',
+                          pdfUrl: doc['url'] ?? '',
+                        ),
+                      ),
                     );
                   },
                 ),
