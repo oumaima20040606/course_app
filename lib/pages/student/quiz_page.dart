@@ -85,6 +85,36 @@ class _CourseQuizPageState extends State<CourseQuizPage> {
       ];
     }
 
+    if (name.contains('kotlin')) {
+      return [
+        _QuizQuestion(
+          text: 'Kotlin est principalement utilisé pour...',
+          options: [
+            'Le développement Android et backend',
+            'La modélisation 3D',
+            'Le design UX',
+            'Les scripts système uniquement',
+          ],
+          correctIndex: 0,
+        ),
+        _QuizQuestion(
+          text: 'Quel mot-clé permet de déclarer une variable immuable en Kotlin ?',
+          options: ['var', 'val', 'let', 'const'],
+          correctIndex: 1,
+        ),
+        _QuizQuestion(
+          text: 'Que permet l opérateur "?" dans un type Kotlin (ex: String?) ?',
+          options: [
+            'Rendre le type nullable',
+            'Créer une classe abstraite',
+            'Importer un module',
+            'Étendre une interface',
+          ],
+          correctIndex: 0,
+        ),
+      ];
+    }
+
     if (name.contains('java')) {
       return [
         _QuizQuestion(
@@ -106,6 +136,41 @@ class _CourseQuizPageState extends State<CourseQuizPage> {
             'Java Version Manager',
           ],
           correctIndex: 0,
+        ),
+      ];
+    }
+
+    if (name.contains('spring boot') || name.contains('springboot')) {
+      return [
+        _QuizQuestion(
+          text: 'Spring Boot est un framework pour...',
+          options: [
+            'Applications mobiles uniquement',
+            'Applications web et microservices en Java',
+            'Bases de données relationnelles',
+            'Interfaces utilisateur desktop uniquement',
+          ],
+          correctIndex: 1,
+        ),
+        _QuizQuestion(
+          text: 'Quel fichier contient en général la méthode main dans un projet Spring Boot ?',
+          options: [
+            'Une classe annotée avec @SpringBootApplication',
+            'Un fichier .xml',
+            'Un script shell',
+            'Un fichier HTML',
+          ],
+          correctIndex: 0,
+        ),
+        _QuizQuestion(
+          text: 'Quelle annotation est utilisée pour exposer un contrôleur REST ?',
+          options: [
+            '@Entity',
+            '@RestController',
+            '@Repository',
+            '@Autowired',
+          ],
+          correctIndex: 1,
         ),
       ];
     }
@@ -214,7 +279,7 @@ class _CourseQuizPageState extends State<CourseQuizPage> {
         ),
         _QuizQuestion(
           text: 'Quel symbole précède les variables en PHP ?',
-          options: ['#', '$', '@', '%'],
+          options: ['#', '\$', '@', '%'],
           correctIndex: 1,
         ),
         _QuizQuestion(
