@@ -55,6 +55,76 @@ class _CourseQuizPageState extends State<CourseQuizPage> {
       ];
     }
 
+    if (name.contains('figma')) {
+      return [
+        _QuizQuestion(
+          text: 'Figma est principalement utilisé pour...',
+          options: [
+            'Le développement backend',
+            'Le design d interfaces et prototypes UI/UX',
+            'La gestion de base de données',
+            'Le montage vidéo',
+          ],
+          correctIndex: 1,
+        ),
+        _QuizQuestion(
+          text: 'Quel avantage clé de Figma pour les équipes ?',
+          options: [
+            'Exécution uniquement hors ligne',
+            'Collaboration en temps réel dans le cloud',
+            'Compilation de code Java',
+            'Gestion des serveurs',
+          ],
+          correctIndex: 1,
+        ),
+        _QuizQuestion(
+          text: 'Qu est-ce qu un frame dans Figma ?',
+          options: [
+            'Un type de base de données',
+            'Un conteneur pour organiser des écrans ou éléments UI',
+            'Un langage de programmation',
+            'Une extension du navigateur',
+          ],
+          correctIndex: 1,
+        ),
+      ];
+    }
+
+    if (name.contains('adobe xd') || name.contains('xd')) {
+      return [
+        _QuizQuestion(
+          text: 'Adobe XD sert principalement à...',
+          options: [
+            'Éditer des vidéos',
+            'Concevoir des maquettes et prototypes d interfaces',
+            'Gérer des serveurs',
+            'Écrire du code Java',
+          ],
+          correctIndex: 1,
+        ),
+        _QuizQuestion(
+          text: 'Quelle fonctionnalité est typique d Adobe XD ?',
+          options: [
+            'Prototypage interactif avec liens entre écrans',
+            'Compilation de projets Android',
+            'Gestion de bases SQL',
+            'Administration système',
+          ],
+          correctIndex: 0,
+        ),
+        _QuizQuestion(
+          text: 'Quel est l objectif principal d un prototype dans Adobe XD ?',
+          options: [
+            'Tester l interaction et les parcours utilisateurs',
+            'Optimiser la base de données',
+            'Compiler le code en binaire',
+            'Configurer un serveur web',
+          ],
+          correctIndex: 0,
+        ),
+      ];
+    }
+
     if (name.contains('flutter') || category == 'mobile') {
       return [
         _QuizQuestion(
