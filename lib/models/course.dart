@@ -37,8 +37,9 @@ class Course {
         .toList();
 
     // --- Lessons (vidéos) ---
+    // Accepte à la fois 'sections' et 'section' comme champ racine
     // sections[...].materials[...] avec materialType="video"
-    final sections = (data['sections'] as List?) ?? [];
+    final sections = (data['sections'] ?? data['section']) as List? ?? [];
     final List<Map<String, String>> parsedLessons = [];
     for (final s in sections) {
       final materials = (s is Map && s['materials'] is List)

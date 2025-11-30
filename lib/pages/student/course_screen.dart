@@ -94,7 +94,14 @@ class _CourseScreenState extends State<CourseScreen> {
                           child: const Icon(Icons.arrow_back, color: Colors.white),
                           height: 35,
                           width: 35,
-                          onTap: () => Navigator.pop(context),
+                          color: const Color(0xFF1F2933),
+                          onTap: () {
+                            Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              "/main",
+                              (route) => false,
+                            );
+                          },
                         ),
                       ),
                     ],

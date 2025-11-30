@@ -49,9 +49,9 @@ class _DetailsScreenState extends State<DetailsScreen> {
             ? course!.videoUrl
             : _fallbackVideoForCourse(course?.name));
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark,
+      value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF111827),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
@@ -64,7 +64,12 @@ class _DetailsScreenState extends State<DetailsScreen> {
                       Align(
                         child: Text(
                           displayTitle,
-                          style: Theme.of(context).textTheme.titleLarge,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
+                              ?.copyWith(
+                                color: Colors.white,
+                              ),
                         ),
                       ),
                       Positioned(
@@ -101,6 +106,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 18,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(
@@ -111,6 +117,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                   style: const TextStyle(
                     fontWeight: FontWeight.w500,
                     fontSize: 16,
+                    color: Colors.white70,
                   ),
                 ),
                 const SizedBox(
@@ -125,7 +132,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                     const Text(
                       " 4.8",
                       style: TextStyle(
-                        color: Colors.grey,
+                        color: Colors.white70,
                         fontWeight: FontWeight.w500,
                         fontSize: 16,
                       ),
@@ -135,12 +142,12 @@ class _DetailsScreenState extends State<DetailsScreen> {
                     ),
                     const Icon(
                       Icons.timer,
-                      color: Colors.grey,
+                      color: Colors.white70,
                     ),
                     const Text(
                       " 72 Hours",
                       style: TextStyle(
-                        color: Colors.grey,
+                        color: Colors.white70,
                         fontWeight: FontWeight.w500,
                         fontSize: 16,
                       ),
@@ -166,7 +173,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
         ),
         bottomSheet: BottomSheet(
           onClosing: () {},
-          backgroundColor: Colors.white,
+          backgroundColor: const Color(0xFF111827),
           enableDrag: false,
           builder: (context) {
             return SizedBox(
@@ -241,7 +248,9 @@ class AboutTab extends StatelessWidget {
       padding: const EdgeInsets.only(top: 20.0),
       child: Text(
         '$title is a complete course designed to help you build solid foundations. You will learn key concepts step by step with practical examples so you can apply them in real projects.',
-        style: Theme.of(context).textTheme.bodyMedium,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.white70,
+            ),
       ),
     );
   }
@@ -301,9 +310,13 @@ class DocumentsTab extends StatelessWidget {
       itemBuilder: (context, index) {
         final doc = docs[index];
         return Card(
+          color: const Color(0xFF1F2933),
           child: ListTile(
             leading: const Icon(Icons.picture_as_pdf, color: Colors.red),
-            title: Text(doc['title']!),
+            title: Text(
+              doc['title']!,
+              style: const TextStyle(color: Colors.white),
+            ),
             trailing: IconButton(
               icon: const Icon(Icons.download_rounded),
               onPressed: () async {
@@ -434,10 +447,17 @@ class ToolsTab extends StatelessWidget {
       itemBuilder: (context, index) {
         final tool = tools[index];
         return Card(
+          color: const Color(0xFF1F2933),
           child: ListTile(
-            leading: const Icon(Icons.build_circle_outlined),
-            title: Text(tool['name']!),
-            subtitle: Text(tool['subtitle'] ?? ''),
+            leading: const Icon(Icons.build_circle_outlined, color: Colors.white),
+            title: Text(
+              tool['name']!,
+              style: const TextStyle(color: Colors.white),
+            ),
+            subtitle: Text(
+              tool['subtitle'] ?? '',
+              style: const TextStyle(color: Colors.white70),
+            ),
             trailing: TextButton(
               onPressed: () async {
                 final uri = Uri.parse(tool['url']!);
@@ -594,7 +614,7 @@ class _CustomTabViewState extends State<CustomTabView> {
         child: Text(
           _tags[index],
           style: TextStyle(
-            color: widget.index != index ? Colors.black : Colors.white,
+            color: widget.index != index ? Colors.white70 : Colors.white,
           ),
         ),
       ),
@@ -608,7 +628,7 @@ class _CustomTabViewState extends State<CustomTabView> {
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: Colors.grey.shade200,
+        color: const Color(0xFF1F2933),
       ),
       child: Row(
         children: _tags
@@ -668,6 +688,7 @@ class _EnrollBottomSheetState extends State<EnrollBottomSheet> {
             onTap: _addToWishlist,
             height: 45,
             width: 45,
+            color: const Color(0xFF1F2933),
             child: const Icon(
               Icons.favorite,
               color: Colors.pink,

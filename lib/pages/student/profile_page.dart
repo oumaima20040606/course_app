@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'edit_profile_page.dart';
+import 'language_page.dart';
 
 class ProfilePage extends StatelessWidget {
   final user = FirebaseAuth.instance.currentUser;
@@ -118,7 +120,17 @@ class ProfilePage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      _profileTile(title: "Edit Profile"),
+                      _profileTile(
+                        title: "Edit Profile",
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => EditProfilePage(),
+                            ),
+                          );
+                        },
+                      ),
                       _profileTile(title: "Privacy"),
 
                       const SizedBox(height: 24),
@@ -131,7 +143,17 @@ class ProfilePage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      _profileTile(title: "Language"),
+                      _profileTile(
+                        title: "Language",
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => LanguagePage(),
+                            ),
+                          );
+                        },
+                      ),
                       _profileTile(title: "Help"),
                       _profileTile(title: "Privacy Policy"),
                       _profileTile(title: "Terms of Service"),
@@ -173,7 +195,7 @@ class ProfilePage extends StatelessWidget {
   }
 }
 
-Widget _profileTile({required String title}) {
+Widget _profileTile({required String title, VoidCallback? onTap}) {
   return Column(
     children: [
       ListTile(
@@ -186,7 +208,7 @@ Widget _profileTile({required String title}) {
           Icons.chevron_right,
           color: Colors.white54,
         ),
-        onTap: () {},
+        onTap: onTap,
       ),
       const Divider(color: Colors.white12, height: 1),
     ],

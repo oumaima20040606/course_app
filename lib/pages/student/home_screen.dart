@@ -8,6 +8,7 @@ import 'package:course_app/widgets/circle_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'course_screen.dart';
+import 'notifications_page.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -45,7 +46,7 @@ class _PromoCardsRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: SizedBox(
-        height: 100,
+        height: 120,
         child: ListView(
           scrollDirection: Axis.horizontal,
           children: const [
@@ -122,6 +123,8 @@ class _PromoCard extends StatelessWidget {
               color: Colors.white70,
               fontSize: 11,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -148,7 +151,10 @@ class Body extends StatelessWidget {
               children: [
                 Text(
                   "Explore Categories",
-                  style: Theme.of(context).textTheme.bodyLarge,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyLarge
+                      ?.copyWith(color: Colors.white),
                 ),
           
               ],
@@ -239,6 +245,8 @@ class CategoryCard extends StatelessWidget {
                     color: Colors.white70,
                     height: 1.2,
                   ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -467,7 +475,14 @@ class CustomAppBar extends StatelessWidget {
               ),
               CircleButton(
                 icon: Icons.notifications,
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationsPage(),
+                    ),
+                  );
+                },
               ),
             ],
           ),

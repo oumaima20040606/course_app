@@ -1,4 +1,4 @@
 import 'package:flutter/material.dart';
 
-const kPrimaryColor = Color(0xFF0F766E); // vert principal
-const kPrimaryLight = Color(0xFF14B8A6); // variante plus claire
+const kPrimaryColor = Color(0xFFFF4B8B); // rose principal (aligné avec les écrans d'auth)
+const kPrimaryLight = Color(0xFFFF7FBF); // variante plus claire
