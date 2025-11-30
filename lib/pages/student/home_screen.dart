@@ -3,6 +3,7 @@ import 'package:course_app/constants/color.dart';
 import 'package:course_app/constants/size.dart';
 import 'package:course_app/models/category.dart';
 import 'package:course_app/models/course.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'details_screen.dart';
 import 'package:course_app/widgets/circle_button.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +35,128 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ContinueLearningSection extends StatelessWidget {
+  const _ContinueLearningSection({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return const SizedBox.shrink();
+
+    final docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('continueLearning')
+        .doc('current');
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: docRef.snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return const SizedBox.shrink();
+        }
+
+        final data = snapshot.data!.data();
+        if (data == null) return const SizedBox.shrink();
+
+        final courseId = data['courseId'] as String? ?? '';
+        final courseName = data['courseName'] as String? ?? '';
+        final lessonTitle = data['lessonTitle'] as String? ?? '';
+        final lessonIndex = (data['lessonIndex'] as num?)?.toInt() ?? 0;
+
+        if (courseId.isEmpty || courseName.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF1F2933),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Continue learning',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        courseName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        lessonTitle,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kPrimaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  onPressed: () async {
+                    try {
+                      final doc = await FirebaseFirestore.instance
+                          .collection('courses')
+                          .doc(courseId)
+                          .get();
+                      if (!doc.exists) return;
+
+                      final course = Course.fromFirestore(doc);
+                      // ignore: use_build_context_synchronously
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DetailsScreen(
+                            title: course.name,
+                            course: course,
+                            initialLessonIndex: lessonIndex,
+                          ),
+                        ),
+                      );
+                    } catch (_) {
+                      // en cas d'erreur, on ne fait rien
+                    }
+                  },
+                  child: const Text('Continue'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -141,6 +264,8 @@ class Body extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 20),
       child: Column(
         children: [
+          const SizedBox(height: 16),
+          const _ContinueLearningSection(),
           const SizedBox(height: 16),
           const _PromoCardsRow(),
           const SizedBox(height: 20),
@@ -393,9 +518,42 @@ class _TopCourseCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    "Author ${course.author}",
-                    style: Theme.of(context).textTheme.bodySmall,
+                  Builder(
+                    builder: (context) {
+                      final lowerName = course.name.toLowerCase();
+                      final lowerCategory = course.category.toLowerCase();
+                      String subtitle;
+                      if (lowerName.contains('python')) {
+                        subtitle =
+                            'Apprenez les bases de Python avec des exercices pratiques.';
+                      } else if (lowerName.contains('angular')) {
+                        subtitle =
+                            'Construisez des apps web modernes avec Angular.';
+                      } else if (lowerName.contains('flutter') ||
+                          lowerCategory == 'mobile') {
+                        subtitle =
+                            'Développez des applications mobiles avec Flutter.';
+                      } else if (lowerName.contains('java')) {
+                        subtitle =
+                            'Solidez vos compétences backend en Java.';
+                      } else if (lowerName.contains('vue')) {
+                        subtitle =
+                            'Frontend moderne et réactif avec Vue.js.';
+                      } else {
+                        subtitle =
+                            'Un cours complet pour progresser sur cette matière.';
+                      }
+
+                      return Text(
+                        subtitle,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: Colors.grey[600]),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    },
                   ),
                 ],
               ),

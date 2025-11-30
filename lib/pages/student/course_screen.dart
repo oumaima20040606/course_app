@@ -298,9 +298,42 @@ class CourseContainer extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  Text(
-                    "Author ${course.author}",
-                    style: Theme.of(context).textTheme.bodySmall,
+                  Builder(
+                    builder: (context) {
+                      final lowerName = course.name.toLowerCase();
+                      final lowerCategory = course.category.toLowerCase();
+                      String subtitle;
+                      if (lowerName.contains('python')) {
+                        subtitle =
+                            'Apprenez les bases de Python étape par étape.';
+                      } else if (lowerName.contains('angular')) {
+                        subtitle =
+                            'Construisez des applications web modernes avec Angular.';
+                      } else if (lowerName.contains('flutter') ||
+                          lowerCategory == 'mobile') {
+                        subtitle =
+                            'Créez des applications mobiles modernes avec Flutter.';
+                      } else if (lowerName.contains('java')) {
+                        subtitle =
+                            'Renforcez vos bases en Java pour le backend.';
+                      } else if (lowerName.contains('vue')) {
+                        subtitle =
+                            'Découvrez le développement frontend avec Vue.js.';
+                      } else {
+                        subtitle =
+                            'Progressez rapidement sur cette matière avec ce cours.';
+                      }
+
+                      return Text(
+                        subtitle,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: Colors.grey[600]),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    },
                   ),
                   const SizedBox(
                     height: 5,

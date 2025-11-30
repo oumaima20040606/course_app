@@ -16,10 +16,12 @@ import 'package:url_launcher/url_launcher.dart';
 class DetailsScreen extends StatefulWidget {
   final String title;
   final Course? course;
+  final int initialLessonIndex;
   const DetailsScreen({
     Key? key,
     required this.title,
     this.course,
+    this.initialLessonIndex = 0,
   }) : super(key: key);
 
   @override
@@ -43,8 +45,36 @@ class _DetailsScreenState extends State<DetailsScreen> {
   @override
   void initState() {
     super.initState();
+    // point de départ pour Continue Learning
+    _currentLessonIndex = widget.initialLessonIndex.clamp(0, 1000);
     _loadFullCourseIfNeeded();
     _loadProgress();
+  }
+
+  Future<void> _saveContinueLearning(int lessonIndex) async {
+    final course = _effectiveCourse ?? widget.course;
+    final user = FirebaseAuth.instance.currentUser;
+    if (course == null || user == null) return;
+    if (_lessons.isEmpty || lessonIndex < 0 || lessonIndex >= _lessons.length) {
+      return;
+    }
+
+    final lesson = _lessons[lessonIndex];
+    final title = lesson['title'] ?? 'Lesson ${lessonIndex + 1}';
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('continueLearning')
+        .doc('current')
+        .set({
+      'courseId': course.id,
+      'courseName': course.name,
+      'category': course.category,
+      'lessonIndex': lessonIndex,
+      'lessonTitle': title,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Future<void> _loadFullCourseIfNeeded() async {
@@ -275,12 +305,14 @@ class _DetailsScreenState extends State<DetailsScreen> {
         return AboutTab(course: course, titleFallback: widget.title);
       case 1:
         return PlayList(
+          course: course,
           lessons: _lessons,
           currentIndex: _currentLessonIndex,
           onLessonSelected: (index) {
             setState(() {
               _currentLessonIndex = index;
             });
+            _saveContinueLearning(index);
           },
           completedLessons: _completedLessonIndices,
           onCompletedChanged: _toggleLessonCompleted,
@@ -402,14 +434,30 @@ class DocumentsTab extends StatelessWidget {
               doc['title']!,
               style: const TextStyle(color: Colors.white),
             ),
-            trailing: IconButton(
-              icon: const Icon(Icons.download_rounded),
-              onPressed: () async {
-                final uri = Uri.parse(doc['url']!);
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                }
-              },
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.bookmark_border, color: Colors.white),
+                  onPressed: () async {
+                    await _saveUserResource(
+                      course: course,
+                      type: 'pdf',
+                      title: doc['title'] ?? 'Document',
+                      url: doc['url'] ?? '',
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.download_rounded),
+                  onPressed: () async {
+                    final uri = Uri.parse(doc['url']!);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
+                  },
+                ),
+              ],
             ),
             onTap: () async {
               final uri = Uri.parse(doc['url']!);
@@ -591,6 +639,7 @@ class ReviewsTab extends StatelessWidget {
 }
 
 class PlayList extends StatelessWidget {
+  final Course? course;
   final List<Map<String, String>> lessons;
   final int currentIndex;
   final ValueChanged<int> onLessonSelected;
@@ -599,6 +648,7 @@ class PlayList extends StatelessWidget {
 
   const PlayList({
     Key? key,
+    this.course,
     required this.lessons,
     required this.currentIndex,
     required this.onLessonSelected,
@@ -635,13 +685,30 @@ class PlayList extends StatelessWidget {
             color: index == currentIndex ? kPrimaryColor : Colors.grey,
           ),
           title: Text(title),
-          trailing: Checkbox(
-            value: completedLessons.contains(index),
-            activeColor: kPrimaryColor,
-            onChanged: (value) {
-              if (value == null) return;
-              onCompletedChanged(index, value);
-            },
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Checkbox(
+                value: completedLessons.contains(index),
+                activeColor: kPrimaryColor,
+                onChanged: (value) {
+                  if (value == null) return;
+                  onCompletedChanged(index, value);
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.bookmark_border),
+                color: kPrimaryColor,
+                onPressed: () async {
+                  await _saveUserResource(
+                    course: course,
+                    type: 'video',
+                    title: title,
+                    url: l['url'] ?? '',
+                  );
+                },
+              ),
+            ],
           ),
           onTap: () => onLessonSelected(index),
         );
@@ -657,6 +724,7 @@ extension on _DetailsScreenState {
       setState(() {
         _currentLessonIndex++;
       });
+      _saveContinueLearning(_currentLessonIndex);
     }
   }
 
@@ -668,6 +736,30 @@ extension on _DetailsScreenState {
   void _markCurrentLessonCompleted() {
     _toggleLessonCompleted(_currentLessonIndex, true);
   }
+}
+
+Future<void> _saveUserResource({
+  required Course? course,
+  required String type,
+  required String title,
+  required String url,
+}) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null || course == null || url.isEmpty) return;
+
+  await FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .collection('savedResources')
+      .add({
+    'courseId': course.id,
+    'courseName': course.name,
+    'category': course.category,
+    'type': type,
+    'title': title,
+    'url': url,
+    'createdAt': FieldValue.serverTimestamp(),
+  });
 }
 
 class Description extends StatelessWidget {
@@ -786,20 +878,6 @@ class _EnrollBottomSheetState extends State<EnrollBottomSheet> {
       ),
       child: Row(
         children: [
-          CustomIconButton(
-            onTap: _addToWishlist,
-            height: 45,
-            width: 45,
-            color: const Color(0xFF1F2933),
-            child: const Icon(
-              Icons.favorite,
-              color: Colors.pink,
-              size: 30,
-            ),
-          ),
-          const SizedBox(
-            width: 20,
-          ),
           Expanded(
             child: CustomIconButton(
               onTap: () {
