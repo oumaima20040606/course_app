@@ -139,6 +139,32 @@ class EnrolledPage extends StatelessWidget {
                         backgroundColor: Colors.black26,
                         color: const Color(0xFFFF4B8B),
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${(c.completedPercentage * 100).toStringAsFixed(0)}% completed',
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: Colors.white70),
+                      ),
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.redAccent,
+                          ),
+                          onPressed: () async {
+                            await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(user.uid)
+                                .collection('enrolledCourses')
+                                .doc(c.id)
+                                .delete();
+                          },
+                        ),
+                      ),
                     ],
                   ),
                 ),

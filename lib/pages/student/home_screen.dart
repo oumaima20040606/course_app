@@ -355,7 +355,10 @@ class _TopCourseCard extends StatelessWidget {
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => DetailsScreen(title: course.name),
+          builder: (context) => DetailsScreen(
+            title: course.name,
+            course: course,
+          ),
         ),
       ),
       child: Container(

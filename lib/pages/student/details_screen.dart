@@ -30,7 +30,111 @@ class _DetailsScreenState extends State<DetailsScreen> {
   int _selectedTag = 0;
   int _currentLessonIndex = 0;
 
-  List<Map<String, String>> get _lessons => widget.course?.lessons ?? const [];
+  Set<int> _completedLessonIndices = {};
+  double _progress = 0.0;
+
+  Course? _fullCourse; // cours rechargé depuis la collection principale "courses"
+
+  Course? get _effectiveCourse => _fullCourse ?? widget.course;
+
+  List<Map<String, String>> get _lessons =>
+      _effectiveCourse?.lessons ?? widget.course?.lessons ?? const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFullCourseIfNeeded();
+    _loadProgress();
+  }
+
+  Future<void> _loadFullCourseIfNeeded() async {
+    final baseCourse = widget.course;
+    if (baseCourse == null) return;
+
+    // Si on a déjà des leçons pour ce cours, pas besoin de recharger
+    if (baseCourse.lessons.isNotEmpty) return;
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('courses')
+          .doc(baseCourse.id)
+          .get();
+      if (!doc.exists) return;
+
+      final loaded = Course.fromFirestore(doc);
+      if (!mounted) return;
+      setState(() {
+        _fullCourse = loaded;
+      });
+    } catch (_) {
+      // en cas d'erreur, on garde simplement le cours de base
+    }
+  }
+
+  Future<void> _loadProgress() async {
+    final course = widget.course;
+    final user = FirebaseAuth.instance.currentUser;
+    if (course == null || user == null || _lessons.isEmpty) return;
+
+    final ref = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('enrolledCourses')
+        .doc(course.id);
+
+    final snap = await ref.get();
+    if (!snap.exists) return;
+
+    final data = snap.data();
+    if (data == null) return;
+
+    final rawCompleted = (data['completedLessonIndices'] as List?) ?? const [];
+    final indices = rawCompleted.whereType<int>().toSet();
+
+    if (!mounted) return;
+    setState(() {
+      _completedLessonIndices = indices;
+      _recomputeProgress();
+    });
+  }
+
+  void _recomputeProgress() {
+    if (_lessons.isEmpty) {
+      _progress = 0.0;
+      return;
+    }
+    _progress = _completedLessonIndices.length / _lessons.length;
+  }
+
+  Future<void> _toggleLessonCompleted(int index, bool completed) async {
+    final course = widget.course;
+    final user = FirebaseAuth.instance.currentUser;
+    if (course == null || user == null || _lessons.isEmpty) return;
+    if (index < 0 || index >= _lessons.length) return;
+
+    setState(() {
+      if (completed) {
+        _completedLessonIndices.add(index);
+      } else {
+        _completedLessonIndices.remove(index);
+      }
+      _recomputeProgress();
+    });
+
+    final ref = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('enrolledCourses')
+        .doc(course.id);
+
+    await ref.set(
+      {
+        'completedLessonIndices': _completedLessonIndices.toList(),
+        'completedPercentage': _progress,
+      },
+      SetOptions(merge: true),
+    );
+  }
 
   void changeTab(int index) {
     setState(() {
@@ -40,12 +144,29 @@ class _DetailsScreenState extends State<DetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final course = widget.course;
+    final course = _effectiveCourse ?? widget.course;
     final displayTitle = course?.name ?? widget.title;
-    final author = course?.author.isNotEmpty == true ? course!.author : 'Author';
+    final author = course?.author.isNotEmpty == true ? course!.author : '';
+    final lowerName = (course?.name ?? widget.title).toLowerCase();
+    final lowerCategory = (course?.category ?? '').toLowerCase();
+
+    String subtitle;
+    if (lowerName.contains('python')) {
+      subtitle = 'Apprenez les bases de Python étape par étape avec des exercices pratiques.';
+    } else if (lowerName.contains('angular')) {
+      subtitle = 'Construisez des applications web modernes avec Angular et TypeScript.';
+    } else if (lowerName.contains('flutter') || lowerCategory == 'mobile') {
+      subtitle = 'Créez des applications mobiles modernes avec Flutter et une seule base de code.';
+    } else if (lowerName.contains('java')) {
+      subtitle = 'Renforcez vos bases en Java et développez des backends solides.';
+    } else if (lowerName.contains('vue')) {
+      subtitle = 'Découvrez le développement frontend moderne avec Vue.js.';
+    } else {
+      subtitle = 'Un cours complet pour progresser rapidement sur cette matière.';
+    }
     final currentVideoUrl = _lessons.isNotEmpty
         ? _lessons[_currentLessonIndex]['url']
-        : (course?.videoUrl?.isNotEmpty == true
+        : (course?.videoUrl.isNotEmpty == true
             ? course!.videoUrl
             : _fallbackVideoForCourse(course?.name));
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -113,52 +234,14 @@ class _DetailsScreenState extends State<DetailsScreen> {
                   height: 3,
                 ),
                 Text(
-                  "Author $author",
+                  subtitle,
                   style: const TextStyle(
                     fontWeight: FontWeight.w500,
-                    fontSize: 16,
+                    fontSize: 14,
                     color: Colors.white70,
                   ),
                 ),
-                const SizedBox(
-                  height: 3,
-                ),
-                Row(
-                  children: [
-                    Image.asset(
-                      icFeaturedOutlined,
-                      height: 20,
-                    ),
-                    const Text(
-                      " 4.8",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(
-                      width: 15,
-                    ),
-                    const Icon(
-                      Icons.timer,
-                      color: Colors.white70,
-                    ),
-                    const Text(
-                      " 72 Hours",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const Spacer(),
-                   
-                  ],
-                ),
-                const SizedBox(
-                  height: 15,
-                ),
+                const SizedBox(height: 15),
                 CustomTabView(
                   index: _selectedTag,
                   changeTab: changeTab,
@@ -199,6 +282,8 @@ class _DetailsScreenState extends State<DetailsScreen> {
               _currentLessonIndex = index;
             });
           },
+          completedLessons: _completedLessonIndices,
+          onCompletedChanged: _toggleLessonCompleted,
         );
       case 2:
         return DocumentsTab(course: course);
@@ -509,12 +594,16 @@ class PlayList extends StatelessWidget {
   final List<Map<String, String>> lessons;
   final int currentIndex;
   final ValueChanged<int> onLessonSelected;
+  final Set<int> completedLessons;
+  final void Function(int, bool) onCompletedChanged;
 
   const PlayList({
     Key? key,
     required this.lessons,
     required this.currentIndex,
     required this.onLessonSelected,
+    required this.completedLessons,
+    required this.onCompletedChanged,
   }) : super(key: key);
 
   @override
@@ -546,6 +635,14 @@ class PlayList extends StatelessWidget {
             color: index == currentIndex ? kPrimaryColor : Colors.grey,
           ),
           title: Text(title),
+          trailing: Checkbox(
+            value: completedLessons.contains(index),
+            activeColor: kPrimaryColor,
+            onChanged: (value) {
+              if (value == null) return;
+              onCompletedChanged(index, value);
+            },
+          ),
           onTap: () => onLessonSelected(index),
         );
       },
@@ -564,7 +661,12 @@ extension on _DetailsScreenState {
   }
 
   void _handleVideoFinished() {
+    _markCurrentLessonCompleted();
     _goToNextLesson();
+  }
+
+  void _markCurrentLessonCompleted() {
+    _toggleLessonCompleted(_currentLessonIndex, true);
   }
 }
 

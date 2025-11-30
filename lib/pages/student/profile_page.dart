@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'edit_profile_page.dart';
 import 'language_page.dart';
 
@@ -9,6 +10,7 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final email = user?.email ?? "User";
+    final uid = user?.uid;
 
     return Scaffold(
       backgroundColor: const Color(0xFF111827),
@@ -72,6 +74,9 @@ class ProfilePage extends StatelessWidget {
                                 fontSize: 12,
                               ),
                             ),
+                            const SizedBox(height: 4),
+                            if (uid != null)
+                              _LanguageLabel(uid: uid),
                           ],
                         ),
                       ),
@@ -236,4 +241,40 @@ Widget _statItem({required String title, required String value}) {
       ),
     ],
   );
+}
+
+class _LanguageLabel extends StatelessWidget {
+  final String uid;
+
+  const _LanguageLabel({Key? key, required this.uid}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+
+        final data = snapshot.data!.data();
+        final lang = data?['language'] as String?;
+
+        if (lang == null || lang.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Text(
+          'Language: $lang',
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 12,
+          ),
+        );
+      },
+    );
+  }
 }

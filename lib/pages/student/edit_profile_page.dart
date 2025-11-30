@@ -50,6 +50,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
     try {
       final newName = _nameController.text.trim();
       final newEmail = _emailController.text.trim();
+      final newPassword = _passwordController.text.trim();
+
+      // Mettre à jour le mot de passe Auth si rempli
+      if (newPassword.isNotEmpty) {
+        await user.updatePassword(newPassword);
+      }
+
       // Mettre à jour Firestore (name + email)
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set(
             {

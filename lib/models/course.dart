@@ -37,8 +37,8 @@ class Course {
         .toList();
 
     // --- Lessons (vidéos) ---
-    // Accepte à la fois 'sections' et 'section' comme champ racine
-    // sections[...].materials[...] avec materialType="video"
+    // 1) Accepte à la fois 'sections' et 'section' comme champ racine
+    //    sections[...].materials[...] avec materialType="video"
     final sections = (data['sections'] ?? data['section']) as List? ?? [];
     final List<Map<String, String>> parsedLessons = [];
     for (final s in sections) {
@@ -55,6 +55,15 @@ class Course {
       }
     }
 
+    // 2) Si aucune leçon n'a été trouvée mais qu'un champ root 'url' existe,
+    //    on crée au moins une leçon pour l'écran Lessons
+    if (parsedLessons.isEmpty && (data['url'] as String? ?? '').isNotEmpty) {
+      parsedLessons.add({
+        'title': (data['sectionName'] ?? data['name'] ?? 'Introduction') as String,
+        'url': data['url'] as String,
+      });
+    }
+
     // --- Tools (outils/plugins) ---
     // Champ 'tools' avec Name / Subtitle / url
     final rawTools = (data['tools'] as List?) ?? [];
@@ -69,7 +78,7 @@ class Course {
 
     return Course(
       id: doc.id,
-      name: data['name'] ?? '',
+      name: (data['name'] ?? data['sectionName'] ?? '') as String,
       thumbnail: data['thumbnail'] ?? '',
       author: data['author'] ?? '',
       completedPercentage:
