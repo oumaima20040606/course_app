@@ -4,14 +4,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-
 import '../../models/course.dart';
 import 'details_screen.dart';
 
 class CourseScreen extends StatefulWidget {
   final String initialCategory;
 
-  const CourseScreen({Key? key, this.initialCategory = 'all'}) : super(key: key);
+  const CourseScreen({Key? key, this.initialCategory = 'all'})
+      : super(key: key);
 
   @override
   _CourseScreenState createState() => _CourseScreenState();
@@ -79,19 +79,18 @@ class _CourseScreenState extends State<CourseScreen> {
                       Align(
                         child: Text(
                           'Course Learning',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                       ),
                       Positioned(
                         left: 0,
                         child: CustomIconButton(
-                          child: const Icon(Icons.arrow_back, color: Colors.white),
+                          child:
+                              const Icon(Icons.arrow_back, color: Colors.white),
                           height: 35,
                           width: 35,
                           color: const Color(0xFF1F2933),
@@ -114,8 +113,7 @@ class _CourseScreenState extends State<CourseScreen> {
                   decoration: InputDecoration(
                     hintText: 'Rechercher une matière...',
                     hintStyle: const TextStyle(color: Colors.white54),
-                    prefixIcon:
-                        const Icon(Icons.search, color: Colors.white70),
+                    prefixIcon: const Icon(Icons.search, color: Colors.white70),
                     filled: true,
                     fillColor: const Color(0xFF1F2933),
                     border: OutlineInputBorder(
@@ -150,9 +148,7 @@ class _CourseScreenState extends State<CourseScreen> {
                           label: Text(
                             cat['label'] ?? '',
                             style: TextStyle(
-                              color: isSelected
-                                  ? Colors.white
-                                  : Colors.white70,
+                              color: isSelected ? Colors.white : Colors.white70,
                             ),
                           ),
                           selected: isSelected,
@@ -177,8 +173,8 @@ class _CourseScreenState extends State<CourseScreen> {
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(
-                          child:
-                              CircularProgressIndicator(color: Color(0xFFFF4B8B)),
+                          child: CircularProgressIndicator(
+                              color: Color(0xFFFF4B8B)),
                         );
                       }
 
@@ -192,13 +188,13 @@ class _CourseScreenState extends State<CourseScreen> {
                       }
 
                       final docs = snapshot.data?.docs ?? [];
-                      List<Course> courses = docs
-                          .map((doc) => Course.fromFirestore(doc))
-                          .toList();
+                      List<Course> courses =
+                          docs.map((doc) => Course.fromFirestore(doc)).toList();
 
                       if (_searchQuery.isNotEmpty) {
                         courses = courses
-                            .where((c) => c.name.toLowerCase().contains(_searchQuery))
+                            .where((c) =>
+                                c.name.toLowerCase().contains(_searchQuery))
                             .toList();
                       }
 
@@ -256,12 +252,19 @@ class CourseContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => DetailsScreen(
-                    title: course.name,
-                    course: course,
-                  ))),
+        context,
+        MaterialPageRoute(
+          builder: (context) => DetailsScreen(
+            title: course.name,
+            courseId: course.id, // Ajoutez ceci
+            thumbnail: course.thumbnail,
+            author: course.author,
+            category: course.category,
+            description: course.description,
+            course: course,
+          ),
+        ),
+      ),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
@@ -282,9 +285,7 @@ class CourseContainer extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
               child: _buildThumbnail(),
             ),
-            const SizedBox(
-              width: 10,
-            ),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -335,14 +336,12 @@ class CourseContainer extends StatelessWidget {
                       );
                     },
                   ),
-                  const SizedBox(
-                    height: 5,
-                  ),
+                  const SizedBox(height: 5),
                   LinearProgressIndicator(
                     value: course.completedPercentage,
                     backgroundColor: Colors.black12,
                     color: kPrimaryColor,
-                  )
+                  ),
                 ],
               ),
             ),

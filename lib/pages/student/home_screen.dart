@@ -135,12 +135,17 @@ class _ContinueLearningSection extends StatelessWidget {
                       if (!doc.exists) return;
 
                       final course = Course.fromFirestore(doc);
-                      // ignore: use_build_context_synchronously
+// ignore: use_build_context_synchronously
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => DetailsScreen(
                             title: course.name,
+                            courseId: course.id, // Ajoutez ceci
+                            thumbnail: course.thumbnail,
+                            author: course.author,
+                            category: course.category,
+                            description: course.description,
                             course: course,
                             initialLessonIndex: lessonIndex,
                           ),
@@ -175,12 +180,14 @@ class _PromoCardsRow extends StatelessWidget {
           children: const [
             _PromoCard(
               title: 'Build your future today',
-              subtitle: 'Each chapter you study brings you closer to your dream job.',
+              subtitle:
+                  'Each chapter you study brings you closer to your dream job.',
             ),
             SizedBox(width: 12),
             _PromoCard(
               title: 'Keep learning, keep growing',
-              subtitle: 'Small progress every day becomes big success in your studies.',
+              subtitle:
+                  'Small progress every day becomes big success in your studies.',
             ),
           ],
         ),
@@ -281,7 +288,6 @@ class Body extends StatelessWidget {
                       .bodyLarge
                       ?.copyWith(color: Colors.white),
                 ),
-          
               ],
             ),
           ),
@@ -482,7 +488,9 @@ class _TopCourseCard extends StatelessWidget {
         MaterialPageRoute(
           builder: (context) => DetailsScreen(
             title: course.name,
-            course: course,
+            courseId: course.id, // Assuming your course object has an id
+            thumbnail: course.thumbnail, // Optional: if you have thumbnail
+            author: course.author, // Optional: if you have author
           ),
         ),
       ),
@@ -534,11 +542,9 @@ class _TopCourseCard extends StatelessWidget {
                         subtitle =
                             'Développez des applications mobiles avec Flutter.';
                       } else if (lowerName.contains('java')) {
-                        subtitle =
-                            'Solidez vos compétences backend en Java.';
+                        subtitle = 'Solidez vos compétences backend en Java.';
                       } else if (lowerName.contains('vue')) {
-                        subtitle =
-                            'Frontend moderne et réactif avec Vue.js.';
+                        subtitle = 'Frontend moderne et réactif avec Vue.js.';
                       } else {
                         subtitle =
                             'Un cours complet pour progresser sur cette matière.';

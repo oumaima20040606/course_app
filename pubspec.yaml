@@ -40,6 +40,14 @@ dependencies:
   video_player: ^2.8.2
   animations: ^2.0.8
   youtube_player_iframe: ^5.0.5
+  image_picker: ^1.2.1
+  intl: ^0.20.2
+  provider: ^6.1.5+1
+flutter_image_picker: ^0.7.0
+image_picker: ^1.0.4
+syncfusion_flutter_charts: ^20.4.48
+firebase_storage: ^11.2.0
+  
 
 dev_dependencies:
   flutter_test:

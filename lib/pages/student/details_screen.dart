@@ -13,15 +13,24 @@ import 'package:flutter/services.dart';
 import 'package:course_app/widgets/lesson_card.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-
-
 class DetailsScreen extends StatefulWidget {
   final String title;
+  final String courseId;
+  final String thumbnail;
+  final String author;
+  final String category;
+  final String description;
   final Course? course;
   final int initialLessonIndex;
+
   const DetailsScreen({
     Key? key,
     required this.title,
+    required this.courseId,
+    this.thumbnail = '',
+    this.author = '',
+    this.category = '',
+    this.description = '',
     this.course,
     this.initialLessonIndex = 0,
   }) : super(key: key);
@@ -36,9 +45,9 @@ class _DetailsScreenState extends State<DetailsScreen> {
 
   Set<int> _completedLessonIndices = {};
   double _progress = 0.0;
-  double? _quizScore; // 0.0 - 1.0
+  double? _quizScore;
 
-  Course? _fullCourse; // cours rechargé depuis la collection principale "courses"
+  Course? _fullCourse;
 
   Course? get _effectiveCourse => _fullCourse ?? widget.course;
 
@@ -48,14 +57,13 @@ class _DetailsScreenState extends State<DetailsScreen> {
   @override
   void initState() {
     super.initState();
-    // point de départ pour Continue Learning
     _currentLessonIndex = widget.initialLessonIndex.clamp(0, 1000);
     _loadFullCourseIfNeeded();
     _loadProgress();
   }
 
   Future<void> _saveContinueLearning(int lessonIndex) async {
-    final course = _effectiveCourse ?? widget.course;
+    final course = _effectiveCourse;
     final user = FirebaseAuth.instance.currentUser;
     if (course == null || user == null) return;
     if (_lessons.isEmpty || lessonIndex < 0 || lessonIndex >= _lessons.length) {
@@ -81,31 +89,29 @@ class _DetailsScreenState extends State<DetailsScreen> {
   }
 
   Future<void> _loadFullCourseIfNeeded() async {
-    final baseCourse = widget.course;
-    if (baseCourse == null) return;
+    // Si nous avons déjà un cours complet, ne rien faire
+    if (widget.course != null && widget.course!.lessons.isNotEmpty) return;
 
-    // Si on a déjà des leçons pour ce cours, pas besoin de recharger
-    if (baseCourse.lessons.isNotEmpty) return;
+    // Si nous avons un courseId, charger le cours complet
+    if (widget.courseId.isNotEmpty) {
+      try {
+        final doc = await FirebaseFirestore.instance
+            .collection('courses')
+            .doc(widget.courseId)
+            .get();
+        if (!doc.exists) return;
 
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('courses')
-          .doc(baseCourse.id)
-          .get();
-      if (!doc.exists) return;
-
-      final loaded = Course.fromFirestore(doc);
-      if (!mounted) return;
-      setState(() {
-        _fullCourse = loaded;
-      });
-    } catch (_) {
-      // en cas d'erreur, on garde simplement le cours de base
+        final loaded = Course.fromFirestore(doc);
+        if (!mounted) return;
+        setState(() {
+          _fullCourse = loaded;
+        });
+      } catch (e) {}
     }
   }
 
   Future<void> _loadProgress() async {
-    final course = widget.course;
+    final course = _effectiveCourse;
     final user = FirebaseAuth.instance.currentUser;
     if (course == null || user == null || _lessons.isEmpty) return;
 
@@ -124,7 +130,8 @@ class _DetailsScreenState extends State<DetailsScreen> {
     final rawCompleted = (data['completedLessonIndices'] as List?) ?? const [];
     final indices = rawCompleted.whereType<int>().toSet();
     final quizScoreRaw = data['quizScore'];
-    final double? quizScore = quizScoreRaw is num ? quizScoreRaw.toDouble() : null;
+    final double? quizScore =
+        quizScoreRaw is num ? quizScoreRaw.toDouble() : null;
 
     if (!mounted) return;
     setState(() {
@@ -143,7 +150,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
   }
 
   Future<void> _toggleLessonCompleted(int index, bool completed) async {
-    final course = widget.course;
+    final course = _effectiveCourse ?? widget.course;
     final user = FirebaseAuth.instance.currentUser;
     if (course == null || user == null || _lessons.isEmpty) return;
     if (index < 0 || index >= _lessons.length) return;
@@ -172,6 +179,25 @@ class _DetailsScreenState extends State<DetailsScreen> {
     );
   }
 
+  void _goToNextLesson() {
+    if (_lessons.isEmpty) return;
+    if (_currentLessonIndex < _lessons.length - 1) {
+      setState(() {
+        _currentLessonIndex++;
+      });
+      _saveContinueLearning(_currentLessonIndex);
+    }
+  }
+
+  void _handleVideoFinished() {
+    _markCurrentLessonCompleted();
+    _goToNextLesson();
+  }
+
+  void _markCurrentLessonCompleted() {
+    _toggleLessonCompleted(_currentLessonIndex, true);
+  }
+
   void changeTab(int index) {
     setState(() {
       _selectedTag = index;
@@ -179,32 +205,43 @@ class _DetailsScreenState extends State<DetailsScreen> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
-    final course = _effectiveCourse ?? widget.course;
+    final course = _effectiveCourse;
     final displayTitle = course?.name ?? widget.title;
-    final author = course?.author.isNotEmpty == true ? course!.author : '';
+    final author =
+        course?.author.isNotEmpty == true ? course!.author : widget.author;
     final lowerName = (course?.name ?? widget.title).toLowerCase();
-    final lowerCategory = (course?.category ?? '').toLowerCase();
+    final lowerCategory =
+        course?.category.toLowerCase() ?? widget.category.toLowerCase();
 
     String subtitle;
     if (lowerName.contains('python')) {
-      subtitle = 'Apprenez les bases de Python étape par étape avec des exercices pratiques.';
+      subtitle =
+          'Apprenez les bases de Python étape par étape avec des exercices pratiques.';
     } else if (lowerName.contains('angular')) {
-      subtitle = 'Construisez des applications web modernes avec Angular et TypeScript.';
-    } else if (lowerName.contains('flutter') || lowerCategory == 'mobile') {
-      subtitle = 'Créez des applications mobiles modernes avec Flutter et une seule base de code.';
+      subtitle =
+          'Construisez des applications web modernes avec Angular et TypeScript.';
+    } else if (lowerName.contains('flutter') ||
+        lowerCategory.contains('mobile')) {
+      subtitle =
+          'Créez des applications mobiles modernes avec Flutter et une seule base de code.';
     } else if (lowerName.contains('java')) {
-      subtitle = 'Renforcez vos bases en Java et développez des backends solides.';
+      subtitle =
+          'Renforcez vos bases en Java et développez des backends solides.';
     } else if (lowerName.contains('vue')) {
       subtitle = 'Découvrez le développement frontend moderne avec Vue.js.';
     } else {
-      subtitle = 'Un cours complet pour progresser rapidement sur cette matière.';
+      subtitle =
+          'Un cours complet pour progresser rapidement sur cette matière.';
     }
+
     final currentVideoUrl = _lessons.isNotEmpty
         ? _lessons[_currentLessonIndex]['url']
         : (course?.videoUrl.isNotEmpty == true
             ? course!.videoUrl
             : _fallbackVideoForCourse(course?.name));
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
@@ -221,12 +258,10 @@ class _DetailsScreenState extends State<DetailsScreen> {
                       Align(
                         child: Text(
                           displayTitle,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(
-                                color: Colors.white,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    color: Colors.white,
+                                  ),
                         ),
                       ),
                       Positioned(
@@ -241,9 +276,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(
-                  height: 25,
-                ),
+                const SizedBox(height: 25),
                 CustomVideoPlayer(
                   videoUrl: currentVideoUrl,
                   onFinished: _handleVideoFinished,
@@ -266,9 +299,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(
-                  height: 3,
-                ),
+                const SizedBox(height: 3),
                 Text(
                   subtitle,
                   style: const TextStyle(
@@ -277,6 +308,24 @@ class _DetailsScreenState extends State<DetailsScreen> {
                     color: Colors.white70,
                   ),
                 ),
+                if (widget.author.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'By ${widget.author}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 13,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
+                if (widget.category.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Chip(
+                    label: Text(widget.category),
+                    backgroundColor: Colors.blue.withOpacity(0.2),
+                  ),
+                ],
                 if (_quizScore != null) ...[
                   const SizedBox(height: 4),
                   Text(
@@ -332,7 +381,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
             _saveContinueLearning(index);
           },
           completedLessons: _completedLessonIndices,
-          onCompletedChanged: _toggleLessonCompleted,
+          onCompletedChanged: _toggleLessonCompleted, // Passer la fonction
         );
       case 2:
         return DocumentsTab(course: course);
@@ -435,11 +484,13 @@ class DocumentsTab extends StatelessWidget {
       return [
         {
           'title': 'Introduction to Frontend Engineer with Vue (PDF)',
-          'url': 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+          'url':
+              'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
         },
         {
           'title': 'Vue Component Cheat Sheet',
-          'url': 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+          'url':
+              'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
         },
       ];
     }
@@ -448,7 +499,8 @@ class DocumentsTab extends StatelessWidget {
       return [
         {
           'title': 'React JS Beginner Guide (PDF)',
-          'url': 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+          'url':
+              'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
         },
       ];
     }
@@ -456,7 +508,8 @@ class DocumentsTab extends StatelessWidget {
     return [
       {
         'title': 'Course Syllabus (PDF)',
-        'url': 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        'url':
+            'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
       },
     ];
   }
@@ -484,7 +537,7 @@ class DocumentsTab extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.bookmark_border, color: Colors.white),
                   onPressed: () async {
-                    await _saveUserResource(
+                    await saveUserResourceGlobal(
                       course: course,
                       type: 'pdf',
                       title: doc['title'] ?? 'Document',
@@ -512,7 +565,8 @@ class DocumentsTab extends StatelessWidget {
                   onPressed: () async {
                     final uri = Uri.parse(doc['url']!);
                     if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      await launchUrl(uri,
+                          mode: LaunchMode.externalApplication);
                     }
                   },
                 ),
@@ -546,7 +600,9 @@ class ToolsTab extends StatelessWidget {
     final category = course?.category.toLowerCase() ?? '';
 
     // Vue / React / frontend
-    if (name.contains('vue') || name.contains('react') || category == 'frontend') {
+    if (name.contains('vue') ||
+        name.contains('react') ||
+        category == 'frontend') {
       return [
         {
           'name': 'Node.js & npm',
@@ -567,7 +623,9 @@ class ToolsTab extends StatelessWidget {
     }
 
     // Flutter / mobile / Kotlin
-    if (name.contains('flutter') || name.contains('kotlin') || category == 'mobile') {
+    if (name.contains('flutter') ||
+        name.contains('kotlin') ||
+        category == 'mobile') {
       return [
         {
           'name': 'Android Studio',
@@ -641,7 +699,8 @@ class ToolsTab extends StatelessWidget {
         return Card(
           color: const Color(0xFF1F2933),
           child: ListTile(
-            leading: const Icon(Icons.build_circle_outlined, color: Colors.white),
+            leading:
+                const Icon(Icons.build_circle_outlined, color: Colors.white),
             title: Text(
               tool['name']!,
               style: const TextStyle(color: Colors.white),
@@ -678,7 +737,8 @@ class ReviewsTab extends StatelessWidget {
       },
       {
         'name': 'Student 2',
-        'comment': 'Helped me understand the basics and start my first project.',
+        'comment':
+            'Helped me understand the basics and start my first project.',
       },
     ];
 
@@ -717,7 +777,6 @@ class PlayList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Si aucune leçon dans Firestore, on retombe sur les leçons statiques
     if (lessons.isEmpty) {
       return ListView.separated(
         separatorBuilder: (_, __) => const SizedBox(height: 20),
@@ -752,14 +811,15 @@ class PlayList extends StatelessWidget {
                 activeColor: kPrimaryColor,
                 onChanged: (value) {
                   if (value == null) return;
-                  onCompletedChanged(index, value);
+                  onCompletedChanged(
+                      index, value); // ← Utilise la fonction passée
                 },
               ),
               IconButton(
                 icon: const Icon(Icons.bookmark_border),
                 color: kPrimaryColor,
                 onPressed: () async {
-                  await _saveUserResource(
+                  await saveUserResourceGlobal(
                     course: course,
                     type: 'video',
                     title: title,
@@ -774,51 +834,6 @@ class PlayList extends StatelessWidget {
       },
     );
   }
-}
-
-extension on _DetailsScreenState {
-  void _goToNextLesson() {
-    if (_lessons.isEmpty) return;
-    if (_currentLessonIndex < _lessons.length - 1) {
-      setState(() {
-        _currentLessonIndex++;
-      });
-      _saveContinueLearning(_currentLessonIndex);
-    }
-  }
-
-  void _handleVideoFinished() {
-    _markCurrentLessonCompleted();
-    _goToNextLesson();
-  }
-
-  void _markCurrentLessonCompleted() {
-    _toggleLessonCompleted(_currentLessonIndex, true);
-  }
-}
-
-Future<void> _saveUserResource({
-  required Course? course,
-  required String type,
-  required String title,
-  required String url,
-}) async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null || course == null || url.isEmpty) return;
-
-  await FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .collection('savedResources')
-      .add({
-    'courseId': course.id,
-    'courseName': course.name,
-    'category': course.category,
-    'type': type,
-    'title': title,
-    'url': url,
-    'createdAt': FieldValue.serverTimestamp(),
-  });
 }
 
 class Description extends StatelessWidget {
@@ -1002,4 +1017,29 @@ class CustomIconButton extends StatelessWidget {
       ),
     );
   }
+}
+
+// Fonction globale à ajouter à la fin du fichier, après toutes les classes
+Future<void> saveUserResourceGlobal({
+  required Course? course,
+  required String type,
+  required String title,
+  required String url,
+}) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null || course == null || url.isEmpty) return;
+
+  await FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .collection('savedResources')
+      .add({
+    'courseId': course.id,
+    'courseName': course.name,
+    'category': course.category,
+    'type': type,
+    'title': title,
+    'url': url,
+    'createdAt': FieldValue.serverTimestamp(),
+  });
 }

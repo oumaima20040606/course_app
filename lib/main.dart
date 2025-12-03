@@ -4,8 +4,6 @@ import 'firebase_options.dart';
 import 'app_router.dart';
 import 'constants/color.dart';
 
-
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 

@@ -78,9 +78,8 @@ class EnrolledPage extends StatelessWidget {
               final enrolledDocs = enrolledSnapshot.data?.docs ?? [];
               final savedDocs = savedSnapshot.data?.docs ?? [];
 
-              final courses = enrolledDocs
-                  .map((d) => Course.fromFirestore(d))
-                  .toList();
+              final courses =
+                  enrolledDocs.map((d) => Course.fromFirestore(d)).toList();
 
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
@@ -124,6 +123,11 @@ class EnrolledPage extends StatelessWidget {
                                 MaterialPageRoute(
                                   builder: (_) => DetailsScreen(
                                     title: c.name,
+                                    courseId: c.id, // Ajoutez ceci
+                                    thumbnail: c.thumbnail,
+                                    author: c.author,
+                                    category: c.category,
+                                    description: c.description,
                                     course: c,
                                   ),
                                 ),
@@ -161,10 +165,12 @@ class EnrolledPage extends StatelessWidget {
                                       if (lowerName.contains('python')) {
                                         subtitle =
                                             'Apprenez les bases de Python étape par étape.';
-                                      } else if (lowerName.contains('angular')) {
+                                      } else if (lowerName
+                                          .contains('angular')) {
                                         subtitle =
                                             'Construisez des applications web modernes avec Angular.';
-                                      } else if (lowerName.contains('flutter') ||
+                                      } else if (lowerName
+                                              .contains('flutter') ||
                                           lowerCategory == 'mobile') {
                                         subtitle =
                                             'Créez des applications mobiles modernes avec Flutter.';
@@ -317,6 +323,11 @@ class EnrolledPage extends StatelessWidget {
                                     MaterialPageRoute(
                                       builder: (_) => DetailsScreen(
                                         title: course.name,
+                                        courseId: course.id, // Ajoutez ceci
+                                        thumbnail: course.thumbnail,
+                                        author: course.author,
+                                        category: course.category,
+                                        description: course.description,
                                         course: course,
                                         initialLessonIndex: initialIndex,
                                       ),
